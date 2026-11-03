@@ -1,0 +1,27 @@
+--- a/controller.js.orig	2026-11-03 18:58:53.383835351 -0300
++++ b/controller.js	2026-11-03 18:59:03.000000000 -0300
+@@ -16,6 +16,24 @@
+    window.addEventListener("gamepaddisconnected", on_controller_disconnect);
+    ready = true;
+    mock = false;
++   // Robustness patch: the gamepadconnected event can be missed (page reload,
++   // late listener). Rescan periodically while no controller is connected.
++   setInterval(rescan, 1000);
++}
++
++let rescan_last = 0;
++function rescan() {
++   if (connected_index != null || Date.now() - rescan_last < 5000) {
++      return;
++   }
++   let controllers = window.navigator.getGamepads();
++   for (let i = 0; i < controllers.length; i++) {
++      if (controllers[i] != null && controllers[i].connected) {
++         rescan_last = Date.now();
++         on_controller_connect();
++         return;
++      }
++   }
+ }
+ 
+ function on_controller_connect() {
